@@ -1,0 +1,5 @@
+export {default as usersController} from './users.controller'
+export {default as labelController} from './label.controller'
+export {default as commentController} from './comment.controller'
+export {default as fileController} from './file.controller'
+export {default as momentController} from './moment.controller'
