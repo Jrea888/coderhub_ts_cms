@@ -15,17 +15,19 @@
     "type": "commonjs",
     "main": "dist/main.js",
     "scripts": {
-        "start": "tsx --env-file=.env.local src/main.ts",
+        "start": "tsx watch --env-file=.env.local src/main.ts",
         "serve": "node --env-file=.env.local dist/main.js",
         "build": "tsc -p tsconfig.json",
         "typecheck": "tsc --noEmit",
         "lint": "biome lint src",
         "format": "prettier --write \"src/**/*.ts\"",
-        "format:check": "prettier --check \"src/**/*.ts\""
+        "format:check": "prettier --check \"src/**/*.ts\"",
+        "keys:generate": "node scripts/generate-keys.mjs",
+        "keys:rotate": "node scripts/generate-keys.mjs --force"
     },
     "dependencies": {
-        "@koa/router": "^15.7.1",
         "@koa/multer": "^4.0.0",
+        "@koa/router": "^15.7.1",
         "dotenv": "^18.0.10",
         "koa": "^3.3.0",
         "koa-bodyparser": "^4.4.1",
@@ -34,11 +36,11 @@
     },
     "devDependencies": {
         "@biomejs/biome": "^2.6.8",
-        "@types/multer": "^2.3.0",
-        "@types/node": "^26.6.6",
         "@types/koa": "^3.0.3",
         "@types/koa-bodyparser": "^4.3.13",
         "@types/koa-router": "^7.4.10",
+        "@types/multer": "^2.3.0",
+        "@types/node": "^26.6.6",
         "tsx": "^4.23.15",
         "typescript": "^7.0.2"
     }

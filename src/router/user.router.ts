@@ -3,10 +3,6 @@ import {usersController} from '../controller'
 
 const usersRouter = new Router({prefix: '/users'})
 
-// 注册用户
-usersRouter.post('/register', usersController.register)
-// 登录用户
-usersRouter.post('/login', usersController.login)
 // 获取用户列表
 usersRouter.get('/list', usersController.list)
 // 获取用户详情

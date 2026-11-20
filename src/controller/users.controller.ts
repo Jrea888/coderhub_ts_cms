@@ -1,14 +1,8 @@
 import {RouterContext} from '@koa/router'
 
+
 class UsersController {
-    // 注册用户
-    async register(ctx: RouterContext) {
-        ctx.body = 200
-    }
-    // 登录用户
-    async login(ctx: RouterContext) {
-        ctx.body = 200
-    }
+
     // 获取用户列表
     async list(ctx: RouterContext) {
         ctx.body = 200
