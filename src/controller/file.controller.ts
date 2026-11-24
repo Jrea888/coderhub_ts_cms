@@ -1,6 +1,7 @@
 import {RouterContext} from '@koa/router'
-import {fileService} from '../service'
+import {fileService, usersService} from '../service'
 import {toPositiveInt} from '../utils'
+import { APP_HOST, APP_PORT } from '../app/config'
 
 class FileController {
     public async uploadAvatar(ctx: RouterContext): Promise<void> {
@@ -11,8 +12,12 @@ class FileController {
 
         const {id: userId} = ctx.state.user
         const {filename, mimetype, size} = ctx.file
-
+        // 1. 保存头像元信息
         await fileService.saveAvatarFile(userId, filename, mimetype, size)
+
+        // 2. 回填可访问的头像地址
+        const avatarUrl = `${APP_HOST}:${APP_PORT}/users/${userId}/avatar`
+        await usersService.updateAvatarUrlById(avatarUrl, userId)
         ctx.body = {status: 200, message: '上传头像成功！', data: null}
     }
 

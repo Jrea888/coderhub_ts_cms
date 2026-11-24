@@ -40,6 +40,13 @@ class UsersService {
         const [result] = await pool.execute<ResultSetHeader>(statement, [userId])
         return result
     }
+
+    // 更新用户头像地址
+    async updateAvatarUrlById(avatarUrl: string, userId: number): Promise<ResultSetHeader> {
+        const statement = `UPDATE users SET avatar_url = ? WHERE id = ?`
+        const [result] = await pool.execute<ResultSetHeader>(statement, [avatarUrl, userId])
+        return result
+    }
 }
 
 export default new UsersService()

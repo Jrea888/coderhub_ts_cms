@@ -1,6 +1,9 @@
 import {RouterContext} from '@koa/router'
 import {toNonNegativeInt, toPositiveInt} from '../utils'
-import {usersService} from '../service'
+import {fileService, usersService} from '../service'
+import {createReadStream, ftruncateSync} from 'node:fs'
+import path from 'node:path'
+import {AVATAR_PATH} from '../app/config'
 
 class UsersController {
     // 获取用户列表
@@ -41,6 +44,26 @@ class UsersController {
 
         await usersService.deleteUser(userId)
         ctx.body = {status: 200, message: 'OK'}
+    }
+
+    // 获取用户头像信息
+    async userAvatarInfo(ctx: RouterContext) {
+        const userId = toNonNegativeInt(ctx.params.userId) || 0
+        if (userId <= 0) {
+            ctx.body = {status: 400, message: '参数错误'}
+            return
+        }
+
+        // 获取用户头像信息
+        const avatarInfo = await fileService.getUserAvatarInfo(userId)
+        if (!avatarInfo) {
+            ctx.body = {status: 404, message: '用户没有头像'}
+            return
+        }
+
+        ctx.set('content-type', avatarInfo.mimetype)
+        // 读取文件流路径： path.resolve(process.cwd(), 'uploads/avatar')
+        ctx.body = createReadStream(path.join(AVATAR_PATH, avatarInfo.filename))
     }
 }
 

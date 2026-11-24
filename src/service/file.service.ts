@@ -1,5 +1,6 @@
-import {ResultSetHeader} from 'mysql2'
+import {ResultSetHeader, RowDataPacket} from 'mysql2'
 import connection from '../app/data-base'
+import {AvatarRow} from '../types'
 
 class FileService {
     // 创建文件元信息
@@ -10,6 +11,7 @@ class FileService {
         return result
     }
 
+    // 创建动态图片元信息
     async savePictureFiles(
         filename: string,
         mimetype: string,
@@ -26,6 +28,13 @@ class FileService {
             momentId
         ])
         return result
+    }
+
+    // 获取用户头像信息
+    async getUserAvatarInfo(userId: number): Promise<AvatarRow | null> {
+        const statement = `SELECT * FROM avatar WHERE user_id = ? ORDER BY id DESC LIMIT 1`
+        const [result] = await connection.execute<RowDataPacket[]>(statement, [userId])
+        return result[0] as AvatarRow | null
     }
 }
 

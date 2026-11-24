@@ -10,5 +10,7 @@ usersRouter.get('/list', verifyTokenAuth, usersController.list)
 usersRouter.get('/info/:userId', verifyTokenAuth, usersController.info)
 // 删除用户
 usersRouter.delete('/delete/:userId', verifyTokenAuth, usersController.delete)
+// 获取用户头像信息
+usersRouter.get('/:userId/avatar', usersController.userAvatarInfo)
 
 export default usersRouter
