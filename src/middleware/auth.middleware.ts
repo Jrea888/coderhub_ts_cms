@@ -72,7 +72,7 @@ export const verifyUserLogin = async (ctx: RouterContext, next: Next) => {
     await next()
 }
 
-// token 校验：只把验签放 try 里，下游异常不再被误判成 401
+// token 验签：只把验签放 try 里，下游异常不再被误判成 401
 export const verifyTokenAuth = async (ctx: RouterContext, next: Next) => {
     const token = ctx.headers.authorization
     if (!token) {

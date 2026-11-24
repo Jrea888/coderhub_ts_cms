@@ -35,3 +35,7 @@ export const KEY_LENGTH = 64
 export const SALT_LENGTH = 16
 export const LEGACY_MD5 = /^[a-f0-9]{32}$/i
 export const SCRYPT_PARAMS = {N: 16384, r: 8, p: 1}
+
+// 图片上传文件路径存储 上传目录（相对项目根目录，启动时 cwd 需要是项目根）
+export const AVATAR_PATH = path.resolve(process.cwd(), 'uploads/avatar')
+export const PICTURE_PATH = path.resolve(process.cwd(), 'uploads/picture')

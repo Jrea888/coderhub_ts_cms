@@ -1,3 +1,36 @@
-class FileController {}
+import {RouterContext} from '@koa/router'
+import {fileService} from '../service'
+import {toPositiveInt} from '../utils'
+
+class FileController {
+    public async uploadAvatar(ctx: RouterContext): Promise<void> {
+        if (!ctx.file?.filename) {
+            ctx.body = {status: 400, message: '上传头像失败', data: null}
+            return
+        }
+
+        const {id: userId} = ctx.state.user
+        const {filename, mimetype, size} = ctx.file
+
+        await fileService.saveAvatarFile(userId, filename, mimetype, size)
+        ctx.body = {status: 200, message: '上传头像成功！', data: null}
+    }
+
+    public async uploadPicture(ctx: RouterContext): Promise<void> {
+        const {id: userId} = ctx.state.user
+        const files = ctx.files ?? []
+        const momentId = toPositiveInt(ctx.query.momentId)
+
+        if (!files.length || !momentId || !userId) {
+            ctx.body = {status: 400, message: '上传图片失败', data: null}
+            return
+        }
+
+        for await (const file of files) {
+            await fileService.savePictureFiles(file.filename, file.mimetype, file.size, userId, momentId)
+        }
+        ctx.body = {status: 200, message: '动态图片发布成功！', data: null}
+    }
+}
 
 export default new FileController()
