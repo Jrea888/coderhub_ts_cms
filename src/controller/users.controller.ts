@@ -1,8 +1,8 @@
 import {RouterContext} from '@koa/router'
+import path from 'node:path'
+import {createReadStream} from 'node:fs'
 import {toNonNegativeInt, toPositiveInt} from '../utils'
 import {fileService, usersService} from '../service'
-import {createReadStream, ftruncateSync} from 'node:fs'
-import path from 'node:path'
 import {AVATAR_PATH} from '../app/config'
 
 class UsersController {

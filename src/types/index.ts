@@ -1,3 +1,7 @@
 export * from './users'
 export * from './token'
 export * from './avatar'
+export * from './label'
+export * from './moment'
+export * from './comment'
+export * from './file'

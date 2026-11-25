@@ -1,3 +1,6 @@
 export {default as usersService} from './users.service'
 export {default as authService} from './auth.service'
 export {default as fileService} from './file.service'
+export { default as labelService } from './label.service'
+export { default as commentService } from './comment.service'
+export { default as momentService } from './moment.service'

@@ -1,6 +1,6 @@
 import {ResultSetHeader, RowDataPacket} from 'mysql2'
 import connection from '../app/data-base'
-import {AvatarRow} from '../types'
+import {AvatarRow, FileRow} from '../types'
 
 class FileService {
     // 创建文件元信息
@@ -35,6 +35,12 @@ class FileService {
         const statement = `SELECT * FROM avatar WHERE user_id = ? ORDER BY id DESC LIMIT 1`
         const [result] = await connection.execute<RowDataPacket[]>(statement, [userId])
         return result[0] as AvatarRow | null
+    }
+
+    async getFileByFilename(filename: string): Promise<FileRow | null> {
+        const statement = `SELECT * FROM file WHERE filename = ? LIMIT 1`
+        const [result] = await connection.execute<RowDataPacket[]>(statement, [filename])
+        return result[0] as FileRow | null
     }
 }
 
