@@ -1,6 +1,7 @@
 import {ResultSetHeader, RowDataPacket} from 'mysql2'
 import pool from '../app/data-base'
-import {MomentDetail, MomentListItem} from '../types'
+import {clampOffset} from '../utils'
+import {ListPage, MomentDetail, MomentListItem} from '../types'
 import {APP_HOST, APP_PORT} from '../app/config'
 
 class momentService {
@@ -12,7 +13,13 @@ class momentService {
         return result.insertId
     }
     // 动态列表
-    async getMomentList(offset: number, size: number): Promise<{list: MomentListItem[]; total: number}> {
+    async getMomentList(offset: number, size: number): Promise<ListPage<MomentListItem>> {
+        const totalStatement = 'SELECT COUNT(*) as total FROM moment'
+        const [totalResult] = await pool.execute<RowDataPacket[]>(totalStatement)
+        const total = toNonNegativeInt(totalResult?.[0]?.total)
+
+        // offset 超出总数时回退到最后一页，避免 total 有值但 list 为空
+        const safeOffset = clampOffset(offset, total, size)
         const statement = `
         SELECT
             m.id id, m.content content,  m.creatAt createTime, m.updateAt updateTime,
@@ -24,13 +31,9 @@ class momentService {
             LEFT JOIN users u ON m.user_id = u.id
             ORDER BY m.id ASC
             LIMIT ?, ?`
-        const [result] = await pool.execute<RowDataPacket[]>(statement, [offset, size])
+        const [result] = await pool.execute<RowDataPacket[]>(statement, [safeOffset, size])
 
-        const totalStatement = 'SELECT COUNT(*) as total FROM moment'
-        const [totalResult] = await pool.execute<RowDataPacket[]>(totalStatement)
-        const total = (totalResult?.[0]?.total as number) || 0
-
-        return {list: result as MomentListItem[], total}
+        return {list: result as MomentListItem[], total, offset: safeOffset}
     }
 
     // 获取动态详情
@@ -62,7 +65,6 @@ class momentService {
     }
 
     // 给动态添加标签
-
     async addLabel(labelID: number, momentID: number): Promise<number> {
         const statement = 'INSERT INTO moment_label (moment_id, label_id) VALUES (?, ?)'
         const [result] = await pool.execute<ResultSetHeader>(statement, [momentID, labelID])

@@ -1,3 +1,4 @@
+export * from './base'
 export * from './users'
 export * from './token'
 export * from './avatar'

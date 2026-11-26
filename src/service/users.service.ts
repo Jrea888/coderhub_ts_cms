@@ -1,6 +1,7 @@
 import {ResultSetHeader, RowDataPacket} from 'mysql2'
 import pool from '../app/data-base'
-import {UserRow} from '../types'
+import {clampOffset, toNonNegativeInt} from '../utils'
+import {ListPage, UserRow} from '../types'
 
 class UsersService {
     // 根据用户名查询用户
@@ -18,13 +19,17 @@ class UsersService {
     }
 
     // 获取用户列表
-    async getUserList(size: number, offset: number): Promise<{list: UserRow[]; total: number}> {
-        const statement = `SELECT * FROM users LIMIT ?, ?`
-        const totalStatement = `SELECT COUNT(*) AS total FROM users `
-
-        const [rows] = await pool.execute<RowDataPacket[]>(statement, [offset, size])
+    async getUserList(size: number, offset: number): Promise<ListPage<UserRow>> {
+        const totalStatement = `SELECT COUNT(*) AS total FROM users`
         const [totalRow] = await pool.execute<RowDataPacket[]>(totalStatement)
-        return {list: rows as UserRow[], total: (totalRow?.[0]?.total as number) || 0}
+        const total = toNonNegativeInt(totalRow?.[0]?.total)
+
+        // offset 超出总数时回退到最后一页，避免 total 有值但 list 为空
+        const safeOffset = clampOffset(offset, total, size)
+        const statement = `SELECT * FROM users LIMIT ?, ?`
+        const [rows] = await pool.execute<RowDataPacket[]>(statement, [safeOffset, size])
+
+        return {list: rows as UserRow[], total, offset: safeOffset}
     }
 
     // 获取用户信息

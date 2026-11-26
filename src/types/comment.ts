@@ -1,4 +1,3 @@
-
 /** 评论列表项 */
 export interface CommentItem {
     id: number

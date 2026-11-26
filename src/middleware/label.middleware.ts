@@ -1,16 +1,13 @@
 import {RouterContext} from '@koa/router'
 import {Next} from 'koa'
-import {getBody} from '../utils'
+import {fail, getBody} from '../utils'
 import {LabelBody} from '../types'
 import {labelService} from '../service'
 
 export const verifyLabelExist = async (ctx: RouterContext, next: Next) => {
     const {labels} = getBody<{labels: unknown}>(ctx)
     if (!Array.isArray(labels)) {
-        ctx.body = {
-            status: 400,
-            message: 'labels 必须是数组'
-        }
+        fail(ctx, 400, 'labels 必须是数组')
         return
     }
 

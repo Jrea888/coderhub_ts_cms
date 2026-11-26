@@ -13,7 +13,7 @@ momentRouter.get('/list', verifyTokenAuth, momentController.getMomentList)
 // 动态详情
 momentRouter.get('/detail/:momentId', verifyTokenAuth, momentController.getMomentDetail)
 
-// 修改和删除动态
+// 修改和删除动态 （需要登录 + 归属校验，是自己的动态，才能修改/删除）
 // 修改动态
 momentRouter.patch('/update/:momentId', verifyTokenAuth, momentController.updateMoment)
 // 删除动态

@@ -1,6 +1,7 @@
 import {ResultSetHeader, RowDataPacket} from 'mysql2'
 import pool from '../app/data-base'
-import {LabelRow} from '../types'
+import {clampOffset, toNonNegativeInt} from '../utils'
+import {LabelRow, ListPage} from '../types'
 
 class LabelService {
     // 创建标签
@@ -12,17 +13,19 @@ class LabelService {
     }
 
     // 获取标签列表
-
-    async list(size: number, offset: number): Promise<{list: LabelRow[]; total: number}> {
+    async list(size: number, offset: number): Promise<ListPage<LabelRow>> {
         // ASC：按 id 升序排列 DESC：按 id 降序排列
         // LIMIT offset, count 表示：跳过 offset 条记录，取 count 条。
-        const statement = 'SELECT * FROM label ORDER BY id ASC LIMIT ?, ?'
-        const [result] = await pool.execute<RowDataPacket[]>(statement, [offset, size])
-
         const totalStatement = 'SELECT COUNT(*) AS total FROM label'
         const [totalRow] = await pool.execute<RowDataPacket[]>(totalStatement)
+        const total = toNonNegativeInt(totalRow?.[0]?.total)
 
-        return {list: result as LabelRow[], total: (totalRow?.[0]?.total as number) || 0}
+        // offset 超出总数时回退到最后一页，避免 total 有值但 list 为空
+        const safeOffset = clampOffset(offset, total, size)
+        const statement = 'SELECT * FROM label ORDER BY id ASC LIMIT ?, ?'
+        const [result] = await pool.execute<RowDataPacket[]>(statement, [safeOffset, size])
+
+        return {list: result as LabelRow[], total, offset: safeOffset}
     }
 
     // 编辑标签
