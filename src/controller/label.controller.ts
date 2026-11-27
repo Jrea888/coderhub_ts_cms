@@ -1,14 +1,20 @@
 import {RouterContext} from '@koa/router'
-import {buildPage, fail, getBody, parsePagination, success, toPositiveInt} from '../utils'
-import {LabelBody} from '../types'
+import {buildPage, fail, getTrimmedField, parsePagination, success, toPositiveInt} from '../utils'
 import {labelService} from '../service'
 
 class LabelController {
     // 创建标签
     public async createLabel(ctx: RouterContext): Promise<void> {
-        const {name} = getBody<LabelBody>(ctx)
-        if (typeof name !== 'string' || !name.trim()) {
+        const name = getTrimmedField(ctx, 'name')
+        if (!name) {
             fail(ctx, 400, '标签名不能为空')
+            return
+        }
+
+        // 事先查重，给出明确提示；并发下仍可能撞唯一键，由全局错误中间件兜住（ER_DUP_ENTRY -> 400）
+        const existed = await labelService.getLabelName(name)
+        if (existed) {
+            fail(ctx, 400, '标签名已存在')
             return
         }
 
@@ -26,9 +32,16 @@ class LabelController {
     // 编辑标签
     public async editLabel(ctx: RouterContext): Promise<void> {
         const id = toPositiveInt(ctx.params.id)
-        const {name} = getBody<LabelBody>(ctx)
-        if (typeof name !== 'string' || !name.trim() || !id) {
+        const name = getTrimmedField(ctx, 'name')
+        if (!name || !id) {
             fail(ctx, 400, '标签名或标签ID不能为空或无效')
+            return
+        }
+
+        // 改成和别的标签重名要拦住；改成自己的原名则允许（等价于无变化）
+        const existed = await labelService.getLabelName(name)
+        if (existed && existed.id !== id) {
+            fail(ctx, 400, '标签名已存在')
             return
         }
 
@@ -44,7 +57,12 @@ class LabelController {
             return
         }
 
-        await labelService.delete(id)
+        const result = await labelService.delete(id)
+        if (!result.affectedRows) {
+            fail(ctx, 404, '标签不存在')
+            return
+        }
+
         success(ctx, '标签删除成功')
     }
 }

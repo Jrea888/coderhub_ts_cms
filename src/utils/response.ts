@@ -6,6 +6,9 @@ import type {Context} from 'koa'
  * - status：业务状态码（200 / 400 / 403 / 404 ...）
  * - data：有数据就返回数据，没有数据统一返回 {}
  * - message：本次请求的说明
+ *
+ * 同时把 HTTP 状态码也设成同一个值：网关、监控、前端 fetch 的 res.ok
+ * 都能按标准语义判断，而不是"永远 200、错误藏在 body 里"。
  */
 export interface ResponseBody {
     status: number
@@ -22,10 +25,12 @@ function normalizeData(data: unknown): unknown {
 
 /** 成功响应 */
 export function success(ctx: Context, message: string, data?: unknown): void {
+    ctx.status = 200
     ctx.body = {status: 200, data: normalizeData(data), message} satisfies ResponseBody
 }
 
 /** 失败响应 */
 export function fail(ctx: Context, status: number, message: string, data?: unknown): void {
+    ctx.status = status
     ctx.body = {status, data: normalizeData(data), message} satisfies ResponseBody
 }

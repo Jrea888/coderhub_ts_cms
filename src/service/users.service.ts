@@ -26,7 +26,12 @@ class UsersService {
 
         // offset 超出总数时回退到最后一页，避免 total 有值但 list 为空
         const safeOffset = clampOffset(offset, total, size)
-        const statement = `SELECT * FROM users LIMIT ?, ?`
+        const statement = `
+        SELECT
+            u.id id, u.name name, u.avatar_url avatar_url, u.createAt createTime, u.updateAt updateTime
+        FROM users u
+            LIMIT ?, ?
+        `
         const [rows] = await pool.execute<RowDataPacket[]>(statement, [safeOffset, size])
 
         return {list: rows as UserRow[], total, offset: safeOffset}
@@ -39,11 +44,11 @@ class UsersService {
         return (rows[0]?.users as UserRow) || null
     }
 
-    // 删除用户
-    async deleteUser(userId: number): Promise<ResultSetHeader> {
+    // 删除用户：返回实际删除的行数，0 表示用户不存在
+    async deleteUser(userId: number): Promise<number> {
         const statement = `DELETE FROM users WHERE id = ?`
         const [result] = await pool.execute<ResultSetHeader>(statement, [userId])
-        return result
+        return result.affectedRows
     }
 
     // 更新用户头像地址

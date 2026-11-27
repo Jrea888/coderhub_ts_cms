@@ -1,16 +1,21 @@
 import {RouterContext} from '@koa/router'
-import {fileService, usersService} from '../service'
+import {authService, fileService, usersService} from '../service'
 import {fail, success, toPositiveInt} from '../utils'
 import {APP_HOST, APP_PORT} from '../app/config'
 
 class FileController {
     public async uploadAvatar(ctx: RouterContext): Promise<void> {
+        const user = ctx.state.user
+        if (!user) {
+            fail(ctx, 400, '用户不存在')
+            return
+        }
         if (!ctx.file?.filename) {
             fail(ctx, 400, '上传头像失败')
             return
         }
 
-        const {id: userId} = ctx.state.user
+        const userId = user.id
         const {filename, mimetype, size} = ctx.file
         // 1. 保存头像元信息
         await fileService.saveAvatarFile(userId, filename, mimetype, size)
@@ -22,17 +27,24 @@ class FileController {
     }
 
     public async uploadPicture(ctx: RouterContext): Promise<void> {
-        const {id: userId} = ctx.state.user
+        const user = ctx.state.user
         const files = ctx.files ?? []
         const momentId = toPositiveInt(ctx.query.momentId)
 
-        if (!files.length || !momentId || !userId) {
+        if (!user || !files.length || !momentId) {
             fail(ctx, 400, '上传图片失败')
             return
         }
 
+        // 只能给自己的动态传配图：之前这里不校验归属，任何登录用户都能往别人的动态里塞图
+        const owned = await authService.checkResource('moment', momentId, user.id)
+        if (!owned) {
+            fail(ctx, 403, '只能给自己的动态上传配图')
+            return
+        }
+
         for await (const file of files) {
-            await fileService.savePictureFiles(file.filename, file.mimetype, file.size, userId, momentId)
+            await fileService.savePictureFiles(file.filename, file.mimetype, file.size, user.id, momentId)
         }
         success(ctx, '动态图片发布成功！')
     }

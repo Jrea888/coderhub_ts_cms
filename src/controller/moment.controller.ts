@@ -2,25 +2,28 @@ import path from 'path'
 import fs from 'fs'
 import type {RouterContext} from '@koa/router'
 import {fileService, momentService} from '../service'
-import {buildPage, fail, getBody, parsePagination, success, toPositiveInt} from '../utils'
+import {buildPage, fail, getTrimmedField, parsePagination, success, toPositiveInt} from '../utils'
 import {PICTURE_PATH} from '../app/config'
+
+/** 动态/评论正文长度上限 */
+const MAX_CONTENT_LENGTH = 10000
 
 class MomentController {
     // 创建动态
     async createMoment(ctx: RouterContext) {
         const user = ctx.state.user
-        const {content} = getBody<{content: string}>(ctx)
-
         if (!user) {
             fail(ctx, 400, '用户不存在')
             return
         }
+
+        const content = getTrimmedField(ctx, 'content')
         if (!content) {
             fail(ctx, 400, '内容不能为空')
             return
         }
-        if (content.trim().length > 10000) {
-            fail(ctx, 400, '内容长度不能超过10000个字符')
+        if (content.length > MAX_CONTENT_LENGTH) {
+            fail(ctx, 400, `内容长度不能超过${MAX_CONTENT_LENGTH}个字符`)
             return
         }
 
@@ -64,19 +67,21 @@ class MomentController {
             return
         }
 
-        const {content} = getBody<{content: string}>(ctx)
+        const content = getTrimmedField(ctx, 'content')
         if (!content) {
             fail(ctx, 400, '内容不能为空')
             return
         }
-        if (content.trim().length > 10000) {
-            fail(ctx, 400, '内容长度不能超过10000个字符')
+        if (content.length > MAX_CONTENT_LENGTH) {
+            fail(ctx, 400, `内容长度不能超过${MAX_CONTENT_LENGTH}个字符`)
             return
         }
 
-        const failCount = await momentService.updateMoment(momentId, content)
-        if (failCount > 0) {
-            fail(ctx, 400, '修改动态失败')
+        const affected = await momentService.updateMoment(momentId, content)
+        if (!affected) {
+            // verifyPermission 已保证这条动态存在且属于当前用户，
+            // 影响行数为 0 只可能是"新内容与原内容完全相同"
+            success(ctx, '动态内容未变化', {momentId, name: user.name, content})
             return
         }
 
@@ -96,9 +101,9 @@ class MomentController {
             return
         }
 
-        const failCount = await momentService.deleteMoment(momentId)
-        if (failCount > 0) {
-            fail(ctx, 400, '删除动态失败')
+        const affected = await momentService.deleteMoment(momentId)
+        if (!affected) {
+            fail(ctx, 404, '动态不存在')
             return
         }
 

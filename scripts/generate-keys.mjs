@@ -21,7 +21,9 @@ const privatePath = path.join(outDir, 'private.key')
 const publicPath = path.join(outDir, 'public.key')
 
 // 检查目录是否存在
-if ((!force && existsSync(privatePath)) || existsSync(publicPath)) {
+// 注意：两个路径的"已存在"判断都要受 --force 控制，
+// 之前写成 (!force && private存在) || public存在，导致 public.key 在时永远拒绝覆盖，keys:rotate 形同虚设
+if (!force && (existsSync(privatePath) || existsSync(publicPath))) {
     console.error(`[keys] ${outDir} 下已存在密钥，拒绝覆盖；轮换请加 --force`)
     // 退出程序
     process.exit(1)

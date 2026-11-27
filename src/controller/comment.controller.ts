@@ -1,13 +1,15 @@
 import {RouterContext} from '@koa/router'
 import {commentService} from '../service'
-import {buildPage, fail, getBody, parsePagination, success, toPositiveInt} from '../utils'
+import {buildPage, fail, getBody, getTrimmedField, parsePagination, success, toPositiveInt} from '../utils'
 
 class CommentController {
     // 创建评论
     async create(ctx: RouterContext) {
         const user = ctx.state.user
-        const {content, momentId} = getBody<{content: string; momentId: number}>(ctx)
+        const {momentId} = getBody<{momentId: number}>(ctx)
         const moment_id = toPositiveInt(momentId) || 0
+        const content = getTrimmedField(ctx, 'content')
+
         if (!user) {
             fail(ctx, 400, '暂无用户信息，无法创建评论')
             return
@@ -17,7 +19,7 @@ class CommentController {
             return
         }
 
-        const commentId = await commentService.create(content.trim(), moment_id, user.id)
+        const commentId = await commentService.create(content, moment_id, user.id)
         if (!commentId) {
             fail(ctx, 400, '评论创建失败')
             return
@@ -43,7 +45,8 @@ class CommentController {
     // 回复评论
     async reply(ctx: RouterContext) {
         const user = ctx.state.user
-        const {content, momentId} = getBody<{content: string; momentId: number}>(ctx)
+        const {momentId} = getBody<{momentId: number}>(ctx)
+        const content = getTrimmedField(ctx, 'content')
         const comment_id = toPositiveInt(ctx.params.commentId) || 0
         const moment_id = toPositiveInt(momentId) || 0
 
@@ -52,27 +55,28 @@ class CommentController {
             return
         }
 
-        const commentId = await commentService.reply(content.trim(), moment_id, comment_id, user.id)
+        const commentId = await commentService.reply(content, moment_id, comment_id, user.id)
         if (!commentId) {
             fail(ctx, 400, '评论回复失败')
             return
         }
 
-        success(ctx, '评论回复成功', {commentId, content, momentId, name: user.name, id: user.id})
+        success(ctx, '评论回复成功', {commentId, content, momentId: moment_id, name: user.name, id: user.id})
     }
 
     // 修改评论
     async update(ctx: RouterContext) {
         const comment_id = toPositiveInt(ctx.params.commentId) || 0
-        const {content} = getBody<{content: string}>(ctx)
+        const content = getTrimmedField(ctx, 'content')
         if (!content || !comment_id) {
             fail(ctx, 400, '内容或评论ID不能为空')
             return
         }
 
-        const commentId = await commentService.update(content.trim(), comment_id)
+        const commentId = await commentService.update(content, comment_id)
+        // 影响行数为 0 说明内容没变（verifyPermission 已保证评论存在且属于自己）
         if (!commentId) {
-            fail(ctx, 400, '评论修改失败')
+            success(ctx, '评论内容未变化', {commentId: comment_id, content})
             return
         }
         success(ctx, '评论修改成功', {commentId, content})
@@ -88,7 +92,7 @@ class CommentController {
 
         const commentId = await commentService.delete(comment_id)
         if (!commentId) {
-            fail(ctx, 400, '评论删除失败')
+            fail(ctx, 404, '评论不存在')
             return
         }
         success(ctx, '评论删除成功', {commentId})

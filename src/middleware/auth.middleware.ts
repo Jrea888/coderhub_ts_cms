@@ -61,7 +61,9 @@ export const verifyUserInfo = async (ctx: RouterContext, next: Next) => {
         return
     }
 
-    ctx.state.user = {name, password}
+    // 注：这里原先还会把 {name, password} 塞进 ctx.state.user，
+    // 但下游 register 是直接读 body 的，该赋值没有任何读取方，
+    // 而且会把 TokenPayload 的类型弄混，已移除。
     await next()
 }
 
@@ -77,7 +79,14 @@ export const verifyUserLogin = async (ctx: RouterContext, next: Next) => {
 
 // token 验签：只把验签放 try 里，下游异常不再被误判成 401
 export const verifyTokenAuth = async (ctx: RouterContext, next: Next) => {
-    const token = ctx.headers.authorization
+    const raw = ctx.headers.authorization
+    if (!raw) {
+        fail(ctx, 400, 'token不能为空')
+        return
+    }
+
+    // 兼容两种写法：`Authorization: Bearer <token>` 与直接传裸 token
+    const token = raw.replace(/^Bearer\s+/i, '').trim()
     if (!token) {
         fail(ctx, 400, 'token不能为空')
         return
@@ -97,7 +106,11 @@ export const verifyTokenAuth = async (ctx: RouterContext, next: Next) => {
 
 // 验证用户权限：判断用户是否是资源的创建者, 是则放行, 否则返回 403, 根据参数确定表名称
 export const verifyPermission = async (ctx: RouterContext, next: Next) => {
-    const {id: userId} = ctx.state.user
+    const userId = ctx.state.user?.id
+    if (!userId) {
+        fail(ctx, 400, '用户不存在')
+        return
+    }
     const [resourceKey] = Object.keys(ctx.params)
 
     if (!resourceKey || !/Id$/g.test(resourceKey)) {
@@ -118,6 +131,33 @@ export const verifyPermission = async (ctx: RouterContext, next: Next) => {
     const hasPermission = await authService.checkResource(tableName, resourceId, userId)
     if (!hasPermission) {
         fail(ctx, 403, '无权访问')
+        return
+    }
+
+    await next()
+}
+
+/**
+ * 校验"只能操作自己的账号"
+ *
+ * 用于 DELETE /users/delete/:userId。本项目没有角色体系，
+ * 所以最小可行的约束是"登录用户只能删除自己"；
+ * 将来引入管理员角色时，这里应补一条 role === 'admin' 的放行分支。
+ */
+export const verifySelfPermission = async (ctx: RouterContext, next: Next) => {
+    const currentUserId = ctx.state.user?.id
+    const targetUserId = toPositiveInt(ctx.params.userId)
+
+    if (!currentUserId) {
+        fail(ctx, 400, '用户不存在')
+        return
+    }
+    if (!targetUserId) {
+        fail(ctx, 400, '用户ID不能为空或无效')
+        return
+    }
+    if (currentUserId !== targetUserId) {
+        fail(ctx, 403, '只能操作自己的账号')
         return
     }
 

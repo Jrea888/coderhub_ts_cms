@@ -37,7 +37,12 @@ class UsersController {
             return
         }
 
-        await usersService.deleteUser(userId)
+        // 之前不看影响行数，删不存在的用户也会返回"删除成功"
+        const affected = await usersService.deleteUser(userId)
+        if (!affected) {
+            fail(ctx, 404, '用户不存在')
+            return
+        }
         success(ctx, '用户删除成功')
     }
 

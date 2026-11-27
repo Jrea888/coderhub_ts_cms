@@ -21,6 +21,8 @@ export const PUBLIC_KEY: Buffer = readFileSync(path.join(dir, 'public.key'))
 // 应用配置
 export const APP_PORT = Number(process.env.APP_PORT) || 9002
 export const APP_HOST = process.env.APP_HOST || 'http://localhost'
+// 跨域允许的来源（* 表示不限制；生产建议写成具体域名）
+export const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*'
 
 // 数据库配置
 export const DB_HOST = process.env.DB_HOST || ''
@@ -39,3 +41,9 @@ export const SCRYPT_PARAMS = {N: 16384, r: 8, p: 1}
 // 图片上传文件路径存储 上传目录（相对项目根目录，启动时 cwd 需要是项目根）
 export const AVATAR_PATH = path.resolve(process.cwd(), 'uploads/avatar')
 export const PICTURE_PATH = path.resolve(process.cwd(), 'uploads/picture')
+
+// 上传限制：之前没有任何大小与类型约束，任意文件都能传上来
+export const MAX_AVATAR_SIZE = 2 * 1024 * 1024 // 头像 2MB
+export const MAX_PICTURE_SIZE = 10 * 1024 * 1024 // 动态配图单张 10MB
+export const MAX_PICTURE_COUNT = 16
+export const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp']

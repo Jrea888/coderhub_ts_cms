@@ -1,7 +1,7 @@
 import {RouterContext} from '@koa/router'
 import {Next} from 'koa'
 import {fail, getBody} from '../utils'
-import {LabelBody} from '../types'
+import {LabelRef} from '../types'
 import {labelService} from '../service'
 
 export const verifyLabelExist = async (ctx: RouterContext, next: Next) => {
@@ -19,7 +19,7 @@ export const verifyLabelExist = async (ctx: RouterContext, next: Next) => {
         )
     ]
 
-    const newLabels: LabelBody[] = []
+    const newLabels: LabelRef[] = []
     for (const name of names) {
         const labelResult = await labelService.getLabelName(name)
         if (labelResult) {
